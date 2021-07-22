@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ssh "$1" "
+  source ~/.bash_profile
+  bidsBatch $2 $3 $4 $5
+"
