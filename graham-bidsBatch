@@ -1,5 +1,9 @@
 #!/bin/bash
 
+sshfs_mounts="$(findmnt -l | grep sshfs | awk '{print $1,$2}')"
+
+echo "${sshfs_mounts}"
+
 ssh "$1" "
   source ~/.bash_profile
   bidsBatch $2 $3 $4 $5
