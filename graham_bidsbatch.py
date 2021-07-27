@@ -8,6 +8,9 @@ import subprocess
 from pathlib import Path, PurePath
 
 
+DOMAIN = "graham.computecanada.ca"
+
+
 class SshfsError(Exception):
     """Exception raised when an sshfs error is encountered."""
 
@@ -24,7 +27,8 @@ def gen_parser():
     parser = argparse.ArgumentParser()
     local_group = parser.add_argument_group("Local")
     local_group.add_argument(
-        "address", help="destination (i.e. <user>@graham.computecanada.ca)"
+        "username",
+        help="Username (will ssh to <username>@graham.computecanada.ca)",
     )
     bidsbatch_group = parser.add_argument_group("bidsBatch")
     bidsbatch_group.add_argument(
@@ -56,7 +60,7 @@ def gen_parser():
     return parser
 
 
-def find_sshfs_parent(child_dir):
+def find_sshfs_parent(child_dir, username):
     """Find all active sshfs mounts and check that one is a parent of child_dir.
 
     This requires "findmnt" to be installed.
@@ -80,7 +84,7 @@ def find_sshfs_parent(child_dir):
     sshfs_mounts = {
         Path(mount.split()[0]): mount.split()[1]
         for mount in all_mounts
-        if "sshfs" in mount
+        if all(["sshfs" in mount, f"{username}@{DOMAIN}" in mount])
     }
 
     # check if child_dir is a child of an active sshfs mount
@@ -133,7 +137,7 @@ def run_bidsbatch(args, bids_dir_remote, out_dir_remote):
     subprocess.run(
         [
             "ssh",
-            args.address,
+            f"{args.username}@{DOMAIN}",
             "source",
             "~/.bash_profile",
             ";",
@@ -156,8 +160,8 @@ def main():
     """Process CLI arguments and run bidsBatch accordingly."""
     parser = gen_parser()
     args = parser.parse_args()
-    bids_dir_remote = find_sshfs_parent(args.bids_dir)
-    out_dir_remote = find_sshfs_parent(args.out_dir)
+    bids_dir_remote = find_sshfs_parent(args.bids_dir, args.username)
+    out_dir_remote = find_sshfs_parent(args.out_dir, args.username)
     run_bidsbatch(args, bids_dir_remote, out_dir_remote)
 
 
