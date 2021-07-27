@@ -20,11 +20,35 @@ class SshfsError(Exception):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("address")
-parser.add_argument("app")
-parser.add_argument("bids_dir")
-parser.add_argument("out_dir")
-parser.add_argument("analysis_level")
+local_group = parser.add_argument_group("Local")
+local_group.add_argument(
+    "address", help="destination (i.e. <user>@graham.computecanada.ca)"
+)
+bidsbatch_group = parser.add_argument_group("bidsBatch")
+bidsbatch_group.add_argument(
+    "-s",
+    help="single-subject mode, run on a single subject instead",
+    metavar="subjid",
+)
+bidsbatch_group.add_argument(
+    "-t", action="store_true", help="test-mode, don't actually submit any jobs"
+)
+bidsbatch_group.add_argument(
+    "-A",
+    help="account to use for allocation (default: ctb-akhanf)",
+    metavar="account",
+)
+bidsbatch_group.add_argument(
+    "-j", help="sets required resources", metavar="job-template"
+)
+bidsbatch_group.add_argument(
+    "app", help="one of the available apps on Graham."
+)
+bidsbatch_group.add_argument("bids_dir")
+bidsbatch_group.add_argument("out_dir")
+bidsbatch_group.add_argument(
+    "analysis_level", choices=["participant", "group"]
+)
 
 args = parser.parse_args()
 
@@ -97,6 +121,10 @@ subprocess.run(
         "~/.bash_profile",
         ";",
         "bidsBatch",
+        f"-s {args.s}" if args.s is not None else "",
+        "-t" if args.t else "",
+        f"-A {args.A}" if args.A is not None else "",
+        f"-j {args.j}" if args.j is not None else "",
         args.app,
         bids_dir_remote,
         out_dir_remote,
